@@ -216,8 +216,8 @@ namespace detail {
 /// Check for an existing file (returns error message if check fails)
 class ExistingFileValidator : public Validator {
   public:
-    ExistingFileValidator() : Validator("FILE") {
-        func_ = [](std::string &filename) {
+    ExistingFileValidator(unsigned short mode = 0) : Validator("FILE") {
+        func_ = [mode](std::string &filename) {
             struct stat buffer;
             bool exist = stat(filename.c_str(), &buffer) == 0;
             bool is_dir = (buffer.st_mode & S_IFDIR) != 0;
@@ -225,6 +225,9 @@ class ExistingFileValidator : public Validator {
                 return "File does not exist: " + filename;
             } else if(is_dir) {
                 return "File is actually a directory: " + filename;
+            }
+            if (mode && !(buffer.st_mode & mode)) {
+                return "File doesn't have the wanted permission: " + filename;
             }
             return std::string();
         };
@@ -327,6 +330,12 @@ class PositiveNumber : public Validator {
 
 /// Check for existing file (returns error message if check fails)
 const detail::ExistingFileValidator ExistingFile;
+
+/// Check that the file exist and available for read
+const detail::ExistingFileValidator ExistingReadFile(S_IREAD);
+
+/// Check that the file exist and available for write
+const detail::ExistingFileValidator ExistingWriteFile(S_IWRITE);
 
 /// Check for an existing directory (returns error message if check fails)
 const detail::ExistingDirectoryValidator ExistingDirectory;
